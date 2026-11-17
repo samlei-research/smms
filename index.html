@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <title>SMMS</title>
 <style>
   :root {
@@ -133,72 +134,130 @@
     .cell .n { font-size: 11.5px; } .cell .note { font-size: 10.5px; }
     .status { padding: 16px; } .status .big { font-size: 28px; } .dot { width: 22px; height: 22px; }
     .row3 { grid-template-columns: 1fr; }
+=======
+<title>Compute Sync</title>
+<style>
+  :root {
+    --bg: #0e1116; --panel: #161b22; --panel2: #1c232d; --line: #2a3340;
+    --text: #e6edf3; --muted: #8b98a8; --accent: #4c9aff;
+    --free: #2ea043; --busy: #f85149; --reserved: #d29922;
+    --radius: 12px;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); }
+  main { max-width: 980px; margin: 0 auto; padding: 20px 16px 48px; }
+  header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  h1 { font-size: 20px; margin: 0; letter-spacing: .2px; }
+  h1 small { color: var(--muted); font-weight: 400; font-size: 13px; margin-left: 8px; }
+  .who { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+  input, button { font: inherit; color: inherit; }
+  input[type=text] {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 8px 10px; min-width: 0; outline: none;
+  }
+  input[type=text]:focus { border-color: var(--accent); }
+  .badge { background: #4c9aff22; color: var(--accent); border: 1px solid #4c9aff66; border-radius: 99px; padding: 3px 10px; font-size: 12px; }
+  .flash { animation: flash .6s; }
+  @keyframes flash { 30% { border-color: var(--busy); box-shadow: 0 0 0 3px #f8514955; } }
+
+  button {
+    background: var(--panel2); border: 1px solid var(--line); border-radius: 8px;
+    padding: 8px 14px; cursor: pointer;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #04111f; font-weight: 600; }
+  button.danger { background: transparent; border-color: var(--busy); color: var(--busy); }
+  button:disabled { opacity: .4; cursor: default; }
+
+  /* status card */
+  .status {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+    padding: 18px 20px; border-radius: var(--radius); background: var(--panel);
+    border: 1px solid var(--line); border-left: 6px solid var(--free); margin-bottom: 22px;
+  }
+  .status.busy { border-left-color: var(--busy); }
+  .status.reserved { border-left-color: var(--reserved); }
+  .status .label { font-size: 12px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); }
+  .status .big { font-size: 24px; font-weight: 650; margin: 2px 0; }
+  .status .sub { color: var(--muted); font-size: 14px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--free); margin-right: 8px; }
+  .busy .dot { background: var(--busy); animation: pulse 1.6s infinite; }
+  .reserved .dot { background: var(--reserved); }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 #f8514988; } 100% { box-shadow: 0 0 0 10px #f8514900; } }
+
+  /* week nav */
+  .nav { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .nav .title { flex: 1; font-weight: 600; }
+  .nav .title span { color: var(--muted); font-weight: 400; margin-left: 8px; }
+
+  /* grid */
+  .grid { display: grid; grid-template-columns: 96px repeat(4, 1fr); gap: 6px; }
+  .colhead { color: var(--muted); font-size: 12px; text-align: center; padding: 4px 0; }
+  .rowhead { display: flex; flex-direction: column; justify-content: center; padding-left: 4px; line-height: 1.25; }
+  .rowhead b { font-size: 14px; }
+  .rowhead span { color: var(--muted); font-size: 12px; }
+  .rowhead.today b { color: var(--accent); }
+  .cell {
+    min-height: 54px; padding: 6px 8px; text-align: left; border-radius: 10px;
+    background: var(--panel); border: 1px dashed var(--line); color: var(--muted);
+    display: flex; flex-direction: column; justify-content: center; overflow: hidden;
+  }
+  .cell.free:hover { border-color: var(--free); color: var(--free); }
+  .cell.free.past { opacity: .35; cursor: default; }
+  .cell.free.past:hover { border-color: var(--line); color: var(--muted); }
+  .cell .n { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cell .note { font-size: 11.5px; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cell.booked { border-style: solid; border-color: transparent; color: var(--text); }
+  .cell.mine { box-shadow: inset 0 0 0 2px #ffffffaa; }
+  .cell.now { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .cell.past.booked { opacity: .55; }
+  .cell .live { color: #ffb4ae; font-size: 11.5px; font-weight: 600; }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: 12px; margin-top: 14px; }
+
+  /* dialog */
+  dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; width: min(380px, 92vw); }
+  dialog::backdrop { background: #000a; }
+  dialog h2 { margin: 0 0 4px; font-size: 17px; }
+  dialog .when { color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+  dialog label { display: block; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+  dialog input[type=text] { width: 100%; }
+  #dlg-err { color: var(--busy); font-size: 12px; min-height: 16px; margin-top: 6px; }
+  dialog .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+
+  #toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--busy);
+    color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  #toast.show { opacity: 1; }
+
+  @media (max-width: 560px) {
+    .grid { grid-template-columns: 70px repeat(4, 1fr); gap: 4px; }
+    .cell { padding: 4px 5px; min-height: 48px; }
+    .cell .n { font-size: 12px; }
+    .status .big { font-size: 20px; }
   }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <h1><span class="mark" aria-hidden="true"><i class="c"></i><i class="s"></i><i class="t"></i></span>SMMS <small id="clock"></small></h1>
-    <div class="who">
-      <span id="me" class="badge me"></span>
-      <span id="role" class="badge admin" hidden>host · admin</span>
-      <button id="usersbtn" class="small" hidden>Users</button>
-    </div>
-  </header>
-
-  <section id="status" class="status"></section>
-
-  <div class="nav">
-    <button id="prev" aria-label="Previous week">‹</button>
-    <div class="title" id="weektitle"></div>
-    <button id="today">Today</button>
-    <button id="next" aria-label="Next week">›</button>
-  </div>
-
-  <div id="grid" class="grid"></div>
-
-  <div class="legend">
-    <span>Click a free slot to book it. Only the person who booked a slot (or the host) can remove it.</span>
-    <span>Blue outline = current slot · white inner ring = your bookings</span>
-  </div>
-</main>
-
-<!-- book / booking info -->
 <dialog id="dlg">
   <h2 id="dlg-title"></h2>
   <div class="when" id="dlg-when"></div>
   <div id="dlg-book">
+    <label for="dlg-name">Name</label>
+    <input id="dlg-name" type="text" maxlength="32">
     <label for="dlg-note">Planned usage (required)</label>
     <input id="dlg-note" type="text" maxlength="80" placeholder="e.g. training run, sim batch">
-    <div class="err" id="dlg-err"></div>
+    <div id="dlg-err"></div>
   </div>
   <div id="dlg-info"></div>
   <div class="actions">
     <button id="dlg-cancel">Close</button>
     <button id="dlg-danger" class="danger" hidden>Release slot</button>
     <button id="dlg-ok" class="primary">Book</button>
-  </div>
-</dialog>
-
-<!-- admin: users -->
-<dialog id="udlg" class="wide">
-  <h2>Users</h2>
-  <div class="when">Name ↔ Linux account ↔ ZeroTier IP(s). Create the Linux account first (<code>sudo adduser NAME</code>, then <code>sudo adduser NAME compute</code>).</div>
-  <div id="u-warn"></div>
-  <table>
-    <thead><tr><th>Name</th><th>Linux account</th><th>ZeroTier IP(s)</th><th></th></tr></thead>
-    <tbody id="u-rows"></tbody>
-  </table>
-  <div class="row3">
-    <div><label for="u-name">Name</label><input id="u-name" type="text" maxlength="32" placeholder="alice"></div>
-    <div><label for="u-linux">Linux account</label><input id="u-linux" type="text" maxlength="32" placeholder="alice"></div>
-    <div><label for="u-ips">ZeroTier IP(s), comma-separated</label><input id="u-ips" type="text" placeholder="10.147.17.21, 10.147.17.22"></div>
-  </div>
-  <div class="err" id="u-err"></div>
-  <div class="actions">
-    <button id="u-close">Close</button>
-    <button id="u-save" class="primary">Save user</button>
   </div>
 </dialog>
 <div id="toast"></div>
@@ -211,21 +270,35 @@ let weekRef = null;        // any ISO date inside the viewed week, null = curren
 let clockOffset = 0;       // serverNow - clientNow (s), so the clock ticks between polls
 
 // ---- helpers --------------------------------------------------------------
+const me = () => ($("#name").value || "").trim();
 const hue = name => { let h = 0; for (const c of name.toLowerCase()) h = (h * 31 + c.charCodeAt(0)) % 360; return h; };
-const p2 = n => String(n).padStart(2, "0");
+const same = (a, b) => a && b && a.toLowerCase() === b.toLowerCase();
+
 // Server timestamps are shifted by the server's UTC offset and read with UTC getters,
 // so everyone sees *server* wall-clock time regardless of their own timezone.
-const srvDate = ts => new Date((ts + state.utc_offset) * 1000);
-const fmtTime = ts => { const d = srvDate(ts); return `${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}`; };
-const fmtDay = ts => srvDate(ts).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
-const isoDay = iso => new Date(iso + "T00:00:00Z");
-const dayParts = iso => { const d = isoDay(iso); return [
-  d.toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" }),
-  d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })]; };
-const ago = sec => { const m = Math.floor(sec / 60); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`; };
+function srvDate(ts) { return new Date((ts + state.utc_offset) * 1000); }
+const p2 = n => String(n).padStart(2, "0");
+function fmtTime(ts) { const d = srvDate(ts); return `${p2(d.getUTCHours())}:${p2(d.getUTCMinutes())}`; }
+function fmtDay(ts) { return srvDate(ts).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }); }
+function isoDay(iso) { return new Date(iso + "T00:00:00Z"); }
+function dayParts(iso) {
+  const d = isoDay(iso);
+  return [d.toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" }),
+          d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" })];
+}
+function ago(sec) {
+  const m = Math.floor(sec / 60);
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`;
+}
 function toast(msg) {
   const t = $("#toast"); t.textContent = msg; t.classList.add("show");
-  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 3500);
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 3000);
+}
+function needName() {
+  if (me()) return false;
+  const el = $("#name"); el.focus(); el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
+  toast("Enter your name first");
+  return true;
 }
 async function api(path, body) {
   const r = await fetch(path, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -237,7 +310,6 @@ async function act(path, body) {
   try { await api(path, body); } catch (e) { toast(e.message); }
   await load();
 }
-const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e; };
 
 // ---- data -----------------------------------------------------------------
 async function load() {
@@ -250,13 +322,10 @@ async function load() {
 
 // ---- render ---------------------------------------------------------------
 function render() {
-  const s = state, me = s.me.name;
-  const chip = $("#me");
-  chip.className = "badge " + (me ? "me" : "anon");
-  chip.textContent = me ? `${me} · ${s.me.ip}` : s.admin ? `Host ${s.me.ip} · not a registered user` : `Unregistered IP ${s.me.ip} · read-only`;
-  $("#role").hidden = !s.admin;
-  $("#usersbtn").hidden = !s.admin;
-  tick(); renderStatus(); renderGrid();
+  $("#role").hidden = !state.admin;
+  tick();
+  renderStatus();
+  renderGrid();
 }
 
 function tick() {
@@ -266,171 +335,173 @@ function tick() {
 }
 
 function renderStatus() {
-  const s = state, live = s.live, bk = s.current_booking, me = s.me.name;
-  const slotLbl = SLOT_LABELS[+s.current_key.split(":")[1]];
+  const el = $("#status"), s = state, live = s.live, bk = s.current_booking;
+  const slotIdx = +s.current_key.split(":")[1];
+  const slotLbl = SLOT_LABELS[slotIdx];
   const nowTs = Date.now() / 1000 + clockOffset;
-  let cls = "", big = "", sub = "", btns = [];
+  let cls = "", label = "Right now", big = "", sub = "", btns = [];
 
   if (live) {
     cls = "busy";
-    big = live.mine ? "In use by you" : `In use by ${live.name}`;
-    sub = (live.note ? `${live.note} · ` : "") + `since ${fmtDay(live.since)} ${fmtTime(live.since)} · ${ago(nowTs - live.since)}`;
+    big = `In use by ${live.name}`;
+    sub = (live.note ? `${live.note} · ` : "") + `since ${fmtDay(live.since)} ${fmtTime(live.since)} · ${ago(nowTs - live.since)}` +
+          (bk && !same(bk.name, live.name) ? ` · slot ${slotLbl} is reserved for ${bk.name}` : "");
     btns = live.mine
       ? [["Done – release", "primary", () => act("/api/live/stop", {})]]
-      : s.admin ? [["Force release (admin)", "danger", () => confirm(`Release ${live.name}'s session?`) && act("/api/live/stop", {})]] : [];
+      : s.admin
+        ? [["Force release (admin)", "danger", () => confirm(`Release ${live.name}'s session?`) && act("/api/live/stop", {})]]
+        : [];
   } else if (bk) {
     cls = "reserved";
-    big = bk.mine ? "Reserved for you" : `Reserved for ${bk.name}`;
+    big = `Free, reserved for ${bk.name}`;
     sub = `slot ${slotLbl}${bk.note ? " · " + bk.note : ""} · not started yet`;
-    btns = bk.mine ? [["Start using now", "primary", startLive]] : [];
+    btns = [["Start using now", "primary", startLive]];
   } else {
     big = "Free";
-    sub = `nobody booked ${slotLbl}` + (me ? " · starting books it for you" : "");
-    btns = me ? [["Start using now", "primary", startLive]] : [];
+    sub = `nobody booked ${slotLbl} · starting books it for you`;
+    btns = [["Start using now", "primary", startLive]];
   }
 
-  const box = $("#status"); box.className = "status " + cls; box.replaceChildren();
-  const access = el("div", { className: "sub access" });
-  if (s.enforce.enabled || s.enforce.dry_run) {
-    access.append(s.holder
-      ? el("span", {}, "Write/execute on the machine: ", el("b", { textContent: s.holder }), " only · everyone else read-only")
-      : el("span", { textContent: "Nobody has write/execute access right now (slot not booked)." }));
-  } else {
-    access.textContent = "OS enforcement is off – the schedule is informational only.";
+  el.className = "status " + cls;
+  el.replaceChildren();
+  const left = document.createElement("div");
+  left.innerHTML = `<div class="label"></div><div class="big"><span class="dot"></span><span class="t"></span></div><div class="sub"></div>`;
+  left.querySelector(".label").textContent = label;
+  left.querySelector(".t").textContent = big;
+  left.querySelector(".sub").textContent = sub;
+  el.append(left);
+  const right = document.createElement("div");
+  for (const [text, kind, fn] of btns) {
+    const b = document.createElement("button"); b.textContent = text; b.className = kind; b.onclick = fn; right.append(b);
   }
-  if (!me) access.prepend(el("b", { textContent: s.admin
-    ? "This host IP isn't registered as a user, so it can't book (it can still remove anything). Add it under your name in Users. "
-    : "Read-only: your IP isn't registered – ask the admin. " }));
-  const left = el("div", {},
-    el("div", { className: "label", textContent: "Right now" }),
-    el("div", { className: "big" }, el("span", { className: "dot" }), el("span", { textContent: big })),
-    el("div", { className: "sub", textContent: sub }), access);
-  const right = el("div");
-  for (const [text, kind, fn] of btns) right.append(el("button", { textContent: text, className: kind, onclick: fn }));
-  box.append(left, right);
+  el.append(right);
 }
 
 function startLive() {
+  if (needName()) return;
   const bk = state.current_booking;
   const slotLbl = SLOT_LABELS[+state.current_key.split(":")[1]];
   // Own booking that already has a planned-usage note: nothing more to ask.
-  if (bk && bk.mine && bk.note) return act("/api/live/start", { note: "" });
-  openForm("Start using now", `Slot ${slotLbl} will be booked for you`, "Start", note => act("/api/live/start", { note }));
+  if (bk && bk.mine && bk.note) return act("/api/live/start", { name: me(), note: "" });
+  const when = bk && !bk.mine
+    ? `Slot ${slotLbl} is reserved for ${bk.name} – starting anyway`
+    : `Slot ${slotLbl} will be booked for you`;
+  openForm("Start using now", when, "Start", (name, note) => act("/api/live/start", { name, note }));
 }
 
 function renderGrid() {
-  const s = state, g = $("#grid"), me = s.me.name;
+  const s = state, g = $("#grid");
   g.replaceChildren();
-  const f = dayParts(s.days[0]), l = dayParts(s.days[6]);
+  const first = s.days[0], last = s.days[6];
+  const f = dayParts(first), l = dayParts(last);
   $("#weektitle").innerHTML = `Week ${s.iso_week}<span>${f[1]} – ${l[1]}</span>`;
 
-  g.append(el("div"));
-  SLOT_LABELS.forEach(t => g.append(el("div", { className: "colhead", textContent: t })));
+  g.append(document.createElement("div"));
+  SLOT_LABELS.forEach(t => { const h = document.createElement("div"); h.className = "colhead"; h.textContent = t; g.append(h); });
 
   for (const iso of s.days) {
     const [wd, dm] = dayParts(iso);
-    g.append(el("div", { className: "rowhead" + (iso === s.today ? " today" : "") }, el("b", { textContent: wd }), el("span", { textContent: dm })));
+    const rh = document.createElement("div");
+    rh.className = "rowhead" + (iso === s.today ? " today" : "");
+    rh.innerHTML = "<b></b><span></span>"; rh.children[0].textContent = wd; rh.children[1].textContent = dm;
+    g.append(rh);
+
     for (let idx = 0; idx < 4; idx++) {
       const key = `${iso}:${idx}`, bk = s.bookings[key];
       const endTs = Date.parse(iso + "T00:00:00Z") / 1000 - s.utc_offset + (idx + 1) * s.slot_hours * 3600;
       const past = endTs <= Date.now() / 1000 + clockOffset;
-      const c = el("button", { className: "cell " + (bk ? "booked" : "free") + (past ? " past" : "") +
-        (!bk && !me && !past ? " locked" : "") + (key === s.current_key ? " now" : "") + (bk && bk.mine ? " mine" : "") });
+      const c = document.createElement("button");
+      c.className = "cell " + (bk ? "booked" : "free") + (past ? " past" : "") +
+                    (key === s.current_key ? " now" : "") + (bk && bk.mine ? " mine" : "");
       if (bk) {
-        c.classList.add("c" + (hue(bk.name) % 4));
-        c.append(el("span", { className: "n", textContent: bk.name }), el("span", { className: "note", textContent: bk.note || "" }));
-        if (key === s.current_key && s.live) c.append(el("span", { className: "live", textContent: "▲ in use" }));
-      } else c.textContent = past ? "" : "+";
+        const h = hue(bk.name);
+        c.style.background = `hsl(${h} 45% 24%)`;
+        c.innerHTML = '<span class="n"></span><span class="note"></span>';
+        c.children[0].textContent = bk.name;
+        c.children[1].textContent = bk.note || "";
+        if (key === s.current_key && s.live) {
+          const lv = document.createElement("span"); lv.className = "live"; lv.textContent = "● in use: " + s.live.name;
+          c.append(lv);
+        }
+      } else {
+        c.textContent = past ? "" : "+";
+        c.disabled = false;
+      }
       c.onclick = () => openSlot(iso, idx, bk, past);
       g.append(c);
     }
   }
 }
 
-// ---- booking dialog ---------------------------------------------------------
+// ---- dialog ---------------------------------------------------------------
 const dlg = $("#dlg");
 // Shared form for "book a slot" and "start now"; planned usage is mandatory in both.
 function openForm(title, when, okLabel, onSubmit) {
   $("#dlg-title").textContent = title;
   $("#dlg-when").textContent = when;
-  $("#dlg-book").hidden = false; $("#dlg-info").hidden = true; $("#dlg-danger").hidden = true;
-  const ok = $("#dlg-ok"); ok.hidden = false; ok.textContent = okLabel;
-  $("#dlg-note").value = ""; $("#dlg-err").textContent = "";
+  $("#dlg-book").hidden = false;
+  $("#dlg-info").hidden = true;
+  $("#dlg-danger").hidden = true;
+  const ok = $("#dlg-ok");
+  ok.hidden = false; ok.textContent = okLabel;
+  $("#dlg-name").value = me(); $("#dlg-note").value = ""; $("#dlg-err").textContent = "";
   ok.onclick = async () => {
-    const note = $("#dlg-note").value.trim();
+    const name = $("#dlg-name").value.trim(), note = $("#dlg-note").value.trim();
+    if (!name) { $("#dlg-err").textContent = "Name is required."; $("#dlg-name").focus(); return; }
     if (note.length < 3) { $("#dlg-err").textContent = "Describe your planned usage (min 3 characters)."; $("#dlg-note").focus(); return; }
-    dlg.close(); await onSubmit(note);
+    $("#name").value = name; localStorage.setItem("cs_name", name);
+    dlg.close(); await onSubmit(name, note);
   };
-  dlg.showModal(); $("#dlg-note").focus();
+  dlg.showModal();
+  (me() ? $("#dlg-note") : $("#dlg-name")).focus();
 }
 
 function openSlot(iso, idx, bk, past) {
+  if (!bk && past) return;
   const [wd, dm] = dayParts(iso);
   const when = `${wd} ${dm} · ${SLOT_LABELS[idx].replace("–", ":00–")}:00`;
-  if (!bk) {
-    if (past) return;
-    if (!state.me.name) return toast("Your IP isn't registered – ask the admin to add you.");
-    return openForm("Book slot", when, "Book", note => act("/api/book", { date: iso, slot: idx, note }));
-  }
-  $("#dlg-title").textContent = "Booked";
+  if (!bk) return openForm("Book slot", when, "Book", (name, note) => act("/api/book", { date: iso, slot: idx, name, note }));
   $("#dlg-when").textContent = when;
-  $("#dlg-book").hidden = true; $("#dlg-info").hidden = false; $("#dlg-ok").hidden = true;
+  $("#dlg-book").hidden = true;
+  $("#dlg-info").hidden = false;
   const canDelete = bk.mine || state.admin;
   $("#dlg-danger").hidden = !canDelete;
-  const info = $("#dlg-info"); info.replaceChildren(
-    el("div", { textContent: `By ${bk.name}` }),
-    el("div", { style: "color:var(--muted)", textContent: (bk.note ? bk.note + " · " : "") + `booked ${fmtDay(bk.created)} ${fmtTime(bk.created)}` }));
-  if (!canDelete) info.append(el("div", { style: "color:var(--muted);font-size:12px;margin-top:10px",
-    textContent: `Only ${bk.name} (the creator) or the host can remove this booking.` }));
-  $("#dlg-danger").onclick = async () => {
-    if (!bk.mine && !confirm(`This is ${bk.name}'s booking. Remove it as admin?`)) return;
-    dlg.close(); await act("/api/release", { date: iso, slot: idx });
-  };
+  $("#dlg-ok").hidden = true;
+  {
+    $("#dlg-title").textContent = "Booked";
+    const info = $("#dlg-info");
+    info.replaceChildren();
+    const l1 = document.createElement("div"); l1.textContent = `By ${bk.name}`;
+    const l2 = document.createElement("div"); l2.style.color = "var(--muted)";
+    l2.textContent = (bk.note ? bk.note + " · " : "") + `booked ${fmtDay(bk.created)} ${fmtTime(bk.created)}`;
+    info.append(l1, l2);
+    if (!canDelete) {
+      const l3 = document.createElement("div"); l3.style.cssText = "color:var(--muted);font-size:12px;margin-top:10px";
+      l3.textContent = `Only ${bk.name} (the creator) or the host can remove this booking.`;
+      info.append(l3);
+    }
+    $("#dlg-danger").onclick = async () => {
+      if (!bk.mine && !confirm(`This is ${bk.name}'s booking. Remove it as admin?`)) return;
+      dlg.close(); await act("/api/release", { date: iso, slot: idx });
+    };
+  }
   dlg.showModal();
 }
 $("#dlg-cancel").onclick = () => dlg.close();
 dlg.addEventListener("keydown", e => { if (e.key === "Enter" && !$("#dlg-ok").hidden) $("#dlg-ok").click(); });
 
-// ---- admin: users -----------------------------------------------------------
-const udlg = $("#udlg");
-async function loadUsers() {
-  const { users } = await api("/api/users");
-  const rows = $("#u-rows"); rows.replaceChildren();
-  if (!users.length) rows.append(el("tr", {}, el("td", { colSpan: 4, style: "color:var(--muted)", textContent: "No users yet – add the first one below." })));
-  for (const u of users) rows.append(el("tr", {},
-    el("td", { textContent: u.name }), el("td", { textContent: u.linux }), el("td", { textContent: u.ips.join(", ") }),
-    el("td", { className: "btns" },
-      el("button", { className: "small", textContent: "Edit", onclick: () => { $("#u-name").value = u.name; $("#u-linux").value = u.linux; $("#u-ips").value = u.ips.join(", "); } }), " ",
-      el("button", { className: "small danger", textContent: "Delete", onclick: async () => {
-        if (!confirm(`Delete ${u.name}? Their upcoming bookings are removed and their access ends immediately.`)) return;
-        try { await api("/api/users/delete", { name: u.name }); } catch (e) { $("#u-err").textContent = e.message; }
-        await loadUsers(); load();
-      } }))));
-  const w = $("#u-warn"); w.replaceChildren();
-  const warnings = (state.enforce && state.enforce.warnings) || [];
-  const enf = state.enforce;
-  if (!enf.enabled && !enf.dry_run) w.append(el("div", { className: "warn", textContent: "OS enforcement is OFF (server started without --enforce)." }));
-  warnings.forEach(t => w.append(el("div", { className: "warn", textContent: t })));
-}
-$("#usersbtn").onclick = async () => { $("#u-err").textContent = ""; await loadUsers(); udlg.showModal(); };
-$("#u-close").onclick = () => udlg.close();
-$("#u-save").onclick = async () => {
-  try {
-    await api("/api/users", { name: $("#u-name").value, linux: $("#u-linux").value, ips: $("#u-ips").value });
-    $("#u-err").textContent = ""; ["#u-name", "#u-linux", "#u-ips"].forEach(i => $(i).value = "");
-    await loadUsers(); load();
-  } catch (e) { $("#u-err").textContent = e.message; }
-};
-
 // ---- wiring ---------------------------------------------------------------
 function shiftWeek(days) {
   const base = isoDay(state.days[0]); base.setUTCDate(base.getUTCDate() + days);
-  weekRef = base.toISOString().slice(0, 10);
+  const iso = base.toISOString().slice(0, 10);
+  weekRef = iso === state.days[0] ? weekRef : iso;
   load();
 }
 $("#prev").onclick = () => shiftWeek(-7);
 $("#next").onclick = () => shiftWeek(7);
 $("#today").onclick = () => { weekRef = null; load(); };
+$("#name").value = localStorage.getItem("cs_name") || "";
+$("#name").addEventListener("input", () => { localStorage.setItem("cs_name", me()); if (state) render(); });
 
 load();
 setInterval(load, 15000);       // pick up other people's changes
