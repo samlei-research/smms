@@ -1,1 +1,4 @@
 *.json
+admin-token
+*.tmp
+__pycache__/

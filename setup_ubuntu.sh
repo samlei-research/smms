@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Prepares an Ubuntu machine for SMMS's slot enforcement. Idempotent; run as root.
+# Review it before running: it edits /etc/fstab, creates mounts and installs a root systemd service.
 #
-#   sudo ZT_IP=10.147.17.1 ./setup-ubuntu.sh
+#   sudo ZT_IP=10.147.17.1 ./setup_ubuntu.sh
 #
 # Layout it creates (BASE defaults to /srv/compute):
 #
@@ -59,7 +60,7 @@ mount -o remount,bind,ro,noexec,nosuid,nodev "$BASE/ro"
 echo "Mounts:"; for m in "$BASE/ro" "$BASE/gate/work"; do findmnt -n -o TARGET,OPTIONS "$m" | sed 's/^/  /'; done
 
 if [ -n "${ZT_IP:-}" ] && [ "${SKIP_SERVICE:-0}" != 1 ]; then
-  mkdir -p "$INSTALL_DIR"
+  install -d -m 0755 "$INSTALL_DIR"
   install -m 0644 "$HERE/index.html" "$INSTALL_DIR/index.html"
   install -m 0755 "$HERE/server.py"  "$INSTALL_DIR/server.py"
   cat > /etc/systemd/system/smms.service <<EOF
@@ -72,7 +73,9 @@ Wants=network-online.target
 # Retry until the ZeroTier address exists (it can appear after boot).
 ExecStart=/usr/bin/python3 $INSTALL_DIR/server.py --host $ZT_IP --port 8080 --enforce \\
   --gate $BASE/gate --device '$GPU_GLOB' \\
-  --data $INSTALL_DIR/schedule.json --users $INSTALL_DIR/users.json
+  --data $INSTALL_DIR/schedule.json --users $INSTALL_DIR/users.json \\
+  --admin-token-file $INSTALL_DIR/admin-token
+UMask=0077
 Restart=always
 RestartSec=5
 
@@ -82,6 +85,8 @@ EOF
   systemctl daemon-reload
   systemctl enable --now smms.service
   echo "Service started: http://$ZT_IP:8080  (logs: journalctl -u smms -f)"
+  for _ in 1 2 3 4 5 6 7 8 9 10; do [ -s "$INSTALL_DIR/admin-token" ] && break; sleep 0.5; done
+  echo "Admin token (root-only file): sudo cat $INSTALL_DIR/admin-token"
 else
   echo "Skipped service install (set ZT_IP=<your zerotier ip> to install it)."
 fi
@@ -91,5 +96,6 @@ cat <<EOF
 Next, per person (accounts are created manually, the tool only maps to them):
   sudo adduser alice
   sudo adduser alice $GROUP
-Then open the web UI ON THE HOST, click "Users" and add:  name, linux account, ZeroTier IP(s).
+Then open the web UI, click "Admin", paste the admin token (sudo cat $INSTALL_DIR/admin-token),
+click "Users" and add:  name, linux account, ZeroTier IP(s).
 EOF
