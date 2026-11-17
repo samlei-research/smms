@@ -16,48 +16,74 @@
 </p>
 
 # SMMS
-
+ 
 Schedule + access gate for one shared compute machine, reachable over ZeroTier.
-
+ 
 * Web UI: current week, 4 x 6h slots per day, who is using the machine right now.
 * Only **registered users** (name <-> Linux account <-> ZeroTier IP) can book / start / stop.
-  A booking or session can only be removed by its creator or by the host (admin).
+  A booking or session can only be removed by its creator or by an admin.
 * Every booking needs a **planned-usage note**. "Start using now" books the current slot if it is free.
 * **On the machine, only the holder of the current 6h slot can write/execute** on the shared compute
   resources. Everyone else is read-only.
-
+* Zero dependencies: one Python file (3.10+, tested on 3.13) and one HTML file.
+> **Read [SECURITY.md](SECURITY.md) before deploying.** SMMS runs as root, speaks plain HTTP and
+> identifies people by their ZeroTier IP. It is built for a small, trusted group, not for the open internet.
+ 
 ## Install (Ubuntu, as root)
-
-    sudo ZT_IP=<this machine's zerotier ip> ./setup-ubuntu.sh
-
-Creates the layout below, adds the mounts to `/etc/fstab`, installs `smms.service`.
-
+ 
+Review `setup_ubuntu.sh` first (it edits `/etc/fstab`, creates mounts and installs a root service), then:
+ 
+    sudo ZT_IP=<this machine's zerotier ip> ./setup_ubuntu.sh
+ 
+It creates the layout below, adds the mounts to `/etc/fstab` and installs `smms.service`
+(files in `/opt/smms`, web UI on `http://<ZT_IP>:8080`).
+ 
     /srv/compute/ro            read-only + noexec view of the data   (everyone can read)
     /srv/compute/gate/         0700 root; ACL entry for the current slot holder only
     /srv/compute/gate/work     read-write view of the same data      (reachable only via the gate)
     /srv/compute/.store/data   the real data (0700 parent: no way around the two views)
-
+ 
 Optionally gate GPUs too (default `--device '/dev/nvidia*'`); edit the unit's ExecStart for other nodes.
-
+Try it without changing anything by starting the server with `--dry-run` instead of `--enforce`.
+ 
+## Admin
+ 
+Admin is **not** tied to where a request comes from (local shell users must not be admins). It is whoever
+presents the admin token, a random secret in a root-only file created on first start:
+ 
+    sudo cat /opt/smms/admin-token
+ 
+In the UI click **Admin**, paste the token (kept for that browser tab only), then **Users**.
+Rotate the token by deleting the file and restarting the service.
+ 
 ## Add a person
-
+ 
     sudo adduser alice
     sudo adduser alice compute            # the group that may use the shared data
-
-Then open the UI **on the host**, click **Users**, enter: name, Linux account, ZeroTier IP(s).
+ 
+Then, as admin, open **Users** and enter: name, Linux account, ZeroTier IP(s).
 Deleting a user removes their upcoming bookings and ends their access immediately.
 `users.json` can also be edited by hand; changes are picked up without a restart.
-
-## Rules of thumb
-
-* Admin = requests from the host itself (127.0.0.1 or the host's own ZeroTier IP) or `--admin <ip>`.
-  Register the host's IP under your own name too if you want to book from the host.
-* Identity is the client IP. ZeroTier authenticates members, but check your ZeroTier flow rules if you
-  need to rule out one member claiming another member's IP.
-* Handover happens within `--interval` seconds (default 5) of a slot boundary, and instantly on any change.
-
+Admins who also want to book register their own ZeroTier IP like everybody else.
+ 
+## Options
+ 
+| Flag | Default | |
+|---|---|---|
+| `--host` | `127.0.0.1` | bind address; use the ZeroTier IP to serve the network |
+| `--port` | `8080` | |
+| `--data` / `--users` | next to `server.py` | schedule and user registry (written 0600) |
+| `--admin-token-file` | next to `server.py` | root-only token file, created if missing |
+| `--allowed-host NAME` | none | extra DNS name accepted in the `Host` header (IPs and `localhost` always are) |
+| `--enforce` | off | apply ACLs for the slot holder (needs root) |
+| `--dry-run` | off | print the enforcement commands instead of running them |
+| `--gate DIR` / `--device GLOB` | none | gate directories / device nodes to protect (repeatable) |
+| `--interval` | `5` | seconds between enforcement checks |
+ 
+Handover happens within `--interval` seconds of a slot boundary, and instantly on any change.
+ 
 ## What it does NOT do
-
+ 
 * It does not kill processes. A job started in your slot keeps running, and files/devices it already
   opened stay usable after handover; only new opens and new path lookups through the gate are refused.
   (A shell whose cwd is inside `gate/work` can also keep using relative paths.)
@@ -66,3 +92,9 @@ Deleting a user removes their upcoming bookings and ends their access immediatel
 * If the service is stopped, the last ACLs stay in place until it starts again.
 * Members of a device node's owning group (e.g. `video`, `render`) keep access to it; the admin page warns
   about this when it detects it.
+* It does not authenticate individual people: identity is the client IP (see SECURITY.md).
+## License
+ 
+Apache-2.0, see [LICENSE](LICENSE).
+ 
+
