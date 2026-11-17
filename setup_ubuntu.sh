@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Prepares an Ubuntu machine for Compute Sync's slot enforcement. Idempotent; run as root.
+# Prepares an Ubuntu machine for SMMS's slot enforcement. Idempotent; run as root.
 #
 #   sudo ZT_IP=10.147.17.1 ./setup-ubuntu.sh
 #
@@ -9,7 +9,7 @@
 #                       so nobody can reach the data except through the two views below.
 #   $BASE/ro            bind mount of the data: read-only + noexec. Everybody can read, nobody
 #                       can write or run anything from here.
-#   $BASE/gate          0700 root directory. Compute Sync adds an ACL entry for the CURRENT SLOT
+#   $BASE/gate          0700 root directory. SMMS adds an ACL entry for the CURRENT SLOT
 #                       HOLDER only (--x = may walk in, nothing else).
 #   $BASE/gate/work     bind mount of the data, read-write + exec. Only reachable through the gate.
 #
@@ -17,14 +17,14 @@
 # The per-user decision therefore has to live on a real parent directory: the gate.
 #
 # Env: BASE, GROUP (default compute), ZT_IP (install systemd unit bound to this IP),
-#      GPU_GLOB (default '/dev/nvidia*'), FSTAB, SKIP_SERVICE=1, INSTALL_DIR (/opt/compute-sync)
+#      GPU_GLOB (default '/dev/nvidia*'), FSTAB, SKIP_SERVICE=1, INSTALL_DIR (/opt/smms)
 set -euo pipefail
 
 BASE=${BASE:-/srv/compute}
 GROUP=${GROUP:-compute}
 FSTAB=${FSTAB:-/etc/fstab}
 GPU_GLOB=${GPU_GLOB:-/dev/nvidia*}
-INSTALL_DIR=${INSTALL_DIR:-/opt/compute-sync}
+INSTALL_DIR=${INSTALL_DIR:-/opt/smms}
 STORE=$BASE/.store
 DATA=$STORE/data
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -37,7 +37,7 @@ getent group "$GROUP" >/dev/null || groupadd "$GROUP"
 mkdir -p "$STORE" "$DATA" "$BASE/ro" "$BASE/gate"
 chown root:root "$BASE" "$STORE" "$BASE/gate"
 chmod 0755 "$BASE"
-chmod 0700 "$STORE" "$BASE/gate"                       # gate: ACL-managed by Compute Sync
+chmod 0700 "$STORE" "$BASE/gate"                       # gate: ACL-managed by SMMS
 chown root:"$GROUP" "$DATA"; chmod 2775 "$DATA"        # setgid: new files inherit the group
 # default ACL: new files stay group-writable whatever the user's umask is, so the next
 # slot holder can modify what the previous one created
@@ -62,9 +62,9 @@ if [ -n "${ZT_IP:-}" ] && [ "${SKIP_SERVICE:-0}" != 1 ]; then
   mkdir -p "$INSTALL_DIR"
   install -m 0644 "$HERE/index.html" "$INSTALL_DIR/index.html"
   install -m 0755 "$HERE/server.py"  "$INSTALL_DIR/server.py"
-  cat > /etc/systemd/system/compute-sync.service <<EOF
+  cat > /etc/systemd/system/smms.service <<EOF
 [Unit]
-Description=Compute Sync (slot scheduler + access gate)
+Description=SMMS (slot scheduler + access gate)
 After=network-online.target zerotier-one.service local-fs.target
 Wants=network-online.target
 
@@ -80,8 +80,8 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
   systemctl daemon-reload
-  systemctl enable --now compute-sync.service
-  echo "Service started: http://$ZT_IP:8080  (logs: journalctl -u compute-sync -f)"
+  systemctl enable --now smms.service
+  echo "Service started: http://$ZT_IP:8080  (logs: journalctl -u smms -f)"
 else
   echo "Skipped service install (set ZT_IP=<your zerotier ip> to install it)."
 fi

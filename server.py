@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Compute Sync - shared-compute scheduler with OS-level slot enforcement.
+SMMS - shared-compute scheduler with OS-level slot enforcement.
 
 Zero dependencies (Python >= 3.8, Linux for enforcement). Run as root on the
 compute machine, bound to its ZeroTier IP:
@@ -453,7 +453,7 @@ class Controller:
 # HTTP
 # ============================================================================
 class Handler(BaseHTTPRequestHandler):
-    server_version = "ComputeSync/2.0"
+    server_version = "SMMS/2.0"
     ctl: Controller
 
     def _who(self):
@@ -595,7 +595,7 @@ def main():
     threading.Thread(target=Handler.ctl.loop, args=(a.interval,), daemon=True).start()
 
     srv = ThreadingHTTPServer((a.host, a.port), Handler)
-    log(f"Compute Sync on http://{a.host}:{a.port}  tz={time.tzname[0]}  "
+    log(f"SMMS on http://{a.host}:{a.port}  tz={time.tzname[0]}  "
         f"enforce={'ON' if a.enforce else 'dry-run' if a.dry_run else 'off'}  "
         f"users={len(users.all())}  extra-admins={sorted(EXTRA_ADMINS) or 'none'}")
     try:
